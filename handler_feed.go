@@ -11,9 +11,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (apiCfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
+func (apiCfg *apiConfig) handlerCreateFeed(w http.ResponseWriter, r *http.Request, user db.User) {
 	type parameters struct {
 		Name string `json:"name"`
+		URL  string `json:"url"`
 	}
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
@@ -22,7 +23,7 @@ func (apiCfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Reques
 		respondWithError(w, 400, fmt.Sprintf("Errror parsing JSON: %v", err))
 		return
 	}
-	user, err := apiCfg.DB.CreateUser(r.Context(), db.CreateUserParams{
+	feed, err := apiCfg.DB.CreateFeed(r.Context(), db.CreateFeedParams{
 		ID: pgtype.UUID{
 			Bytes: uuid.New(),
 			Valid: true,
@@ -35,14 +36,21 @@ func (apiCfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Reques
 			Time:  time.Now(),
 			Valid: true,
 		},
-		Name: params.Name,
+		Name:   params.Name,
+		Url:    params.URL,
+		UserID: user.ID,
 	})
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Couldnt create user: %s", err))
+		respondWithError(w, 400, fmt.Sprintf("Couldnt create feed: %s", err))
 	}
-	respondWithJson(w, 201, databaseUserToUser(user))
+	respondWithJson(w, 201, databaseFeedToFeed(feed))
 }
 
-func (apiCfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request, user db.User) {
-	respondWithJson(w, 200, databaseUserToUser(user))
+func (apiCfg *apiConfig) handlerGetAllFeeds(w http.ResponseWriter, r *http.Request) {
+	feeds, err := apiCfg.DB.GetFeeds(r.Context())
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Couldn't get feeds: %v", err))
+		return
+	}
+	respondWithJson(w, 200, databaseFeedsToFeeds(feeds))
 }
