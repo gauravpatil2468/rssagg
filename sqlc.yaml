@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - schema: "sql/schema"          # Path to your goose migration .sql files (or your schema files)
+    queries: "sql/queries"        # Path to your SQL query files
+    engine: "postgresql"          # Database engine
+    gen:
+      go:
+        package: "db"              # Go package name for generated code
+        out: "internal/db"         # Output folder for generated code
+        sql_package: "pgx/v5"      # Use pgx instead of database/sql (optional but recommended)
