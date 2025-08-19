@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gauravpatil2468/rssagg/internal/db"
 	"github.com/go-chi/chi"
@@ -36,9 +37,12 @@ func main() {
 	}
 	defer pool.Close()
 
+	database := db.New(pool)
 	apiCfg := apiConfig{
-		DB: db.New(pool),
+		DB: database,
 	}
+
+	go startScrapping(database, 10, time.Minute)
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
@@ -66,6 +70,7 @@ func main() {
 		Addr:    ":" + portString,
 	}
 	log.Printf("Server starting on port %v", portString)
+
 	err = srv.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
